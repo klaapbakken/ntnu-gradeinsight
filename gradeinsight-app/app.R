@@ -307,7 +307,7 @@ server <- function(input, output) {
             mean() %>% 
             round(2)
         lb_grade <- av_grade %>%
-            round() %>%
+            floor() %>%
             as.character() %>%
             recode("5" = "A", "4" = "B", "3" = "C", "2" = "D", "1" = "E", "0" = "F")
         glue("Your average numeric grade is {av_grade} and is bounded below by the grade {lb_grade}. 
