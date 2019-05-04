@@ -1,0 +1,11 @@
+visualize.R
+html_to_df.R
+*.Rproj.user
+*.dcf
+*.csv
+*.pdf
+*.png
+*.Rhistory
+data
+.Rproj.user
+*.Rproj
