@@ -32,8 +32,7 @@ html_to_df <- function(filename){
     
     courses <- indices %>%
         map_chr(~courses_raw %>% extract2(.x)) %>%
-        map_chr(~str_extract(.x, "....[0-9][0-9][0-9][0-9]")) %>%
-        map_chr(~str_replace(.x, "\t", ""))
+        map_chr(~str_extract(.x, "[ÆØÅA-Z\\-]{2,5}\\d{3,6}"))
     
     course_names <- indices %>% 
         map_chr(~courses_raw %>% extract2(.x)) %>%
@@ -112,6 +111,8 @@ query_grade_statistic <- function(url, period_code){
             percentage_failed = failed/total * 100,
             url = url
         )
+    incProgress(amount = 1)
+    return(grade_stats)
     
 }
 quantile_range <- function(v, x, q){
@@ -194,8 +195,10 @@ ui <- fluidPage(theme = shinytheme("cerulean"),
                  )
     ),
     hr(h6("Created by Øyvind Klåpbakken using R Shiny. Uploaded files are only
-       stored temporarily and only for the purpose of collecting course statistics
-       about the relevant courses. The source code will be published soon\u2122."))
+       stored temporarily and only for the purpose of providing the user with grade statistics.
+          The source code is available at",
+          a("https://github.com/klaapbakken/ntnu-gradeinsight"))
+    )
 )
 
 server <- function(input, output) {
@@ -338,7 +341,13 @@ server <- function(input, output) {
     
     observeEvent(input$query, {
         validate(need(grades_df(), label = "Grades", message=FALSE))
-        extended_grades_df(extend_grades_df(grades_df()))
+        withProgress({
+            extended_grades_df(extend_grades_df(grades_df()))
+        },
+        message = "Querying grade statistics",
+        max=nrow(grades_df()),
+        value=0
+        )
     })
 }
 
