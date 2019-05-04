@@ -8,4 +8,3 @@ html_to_df.R
 *.Rhistory
 data
 .Rproj.user
-*.Rproj
