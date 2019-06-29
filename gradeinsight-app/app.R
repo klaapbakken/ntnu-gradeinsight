@@ -104,6 +104,7 @@ query_grade_statistic <- function(url, period_code){
     grade_stats <- request %>%
         content() %>% 
         map_dfr(as_tibble) %>% 
+        select(-contains("value")) %>% 
         filter(semester_code == period_code)
     
     grade_stats <- grade_stats %>%
@@ -129,12 +130,13 @@ extend_grades_df <- function(df){
         df$period_code,
         query_grade_statistic
     ) %>%
-        map_dfr(as_tibble)
-    
+        map_dfr(as_tibble) %>%
+        select(-contains("value"))
     extended_df <- df %>%
         left_join(grade_stats, by="url") %>%
-        select(-c(value, period, period_code)) %>% 
-        mutate(semester_code = semester_code %>% as_factor())
+        select(-c(period, period_code)) %>% 
+        mutate(semester_code = semester_code %>%
+                   as_factor())
     
     grade_percentile <- function(a, b, c, d, e, f, numeric_grade){
         uq <- partial(quantile_range, q="u")
