@@ -36,7 +36,10 @@ html_to_df <- function(filename){
     
     course_names <- indices %>% 
         map_chr(~courses_raw %>% extract2(.x)) %>%
-        map_chr(~str_extract(.x, "[^\t]+$"))
+        map_chr(~str_extract_all(
+            .x, "([A-Z][a-zæøå \\-]{2,100}[0-9]?)", simplify=TRUE
+        ) %>%
+            extract(1, 2))
     
     credits <- indices %>% 
         map_chr(~credits_raw %>% extract2(.x)) %>% 
@@ -180,6 +183,8 @@ ui <- fluidPage(theme = shinytheme("cerulean"),
                  fileInput("grades_file", label = h3("HTML input")),
                  dataTableOutput("grades_plot")
                  ),
+        tabPanel("Course selection",
+                 uiOutput("course_selector")),
         tabPanel("Course statistics",
                  textOutput("course_statistics_description", h5),
                  actionButton("query", "Collect grade distributions"),
@@ -213,6 +218,7 @@ server <- function(input, output) {
     empty_tibble <- tibble()
     empty_plot <- plot_grid
     grades_df <- reactiveVal(value = NULL)
+    original_grades_df <- reactiveVal(value = NULL)
     extended_grades_df <- reactiveVal(value = NULL)
     plots <- reactiveValues()
     
@@ -304,7 +310,10 @@ server <- function(input, output) {
             multiply_by(100)
         av_grade <- grades_df() %>%
             pull(numeric_grade) %>% 
-            mean() %>% 
+            weighted.mean(
+                grades_df() %>%
+                    pull(credits)
+                ) %>% 
             round(2)
         lb_grade <- av_grade %>%
             floor() %>%
@@ -315,8 +324,18 @@ server <- function(input, output) {
              better than {l_perc}% of your class.")
     })
     
+    output$course_selector <- renderUI({
+        validate(need(original_grades_df(), label = "Grades", message=FALSE))
+        checkboxGroupInput("course_selection",
+                           label = "Course selection",
+                           choices = original_grades_df() %>%
+                               pull(course_name),
+                           selected = original_grades_df() %>%
+                               pull(course_name))
+    })
+    
     output$submit_description <- renderText({
-        "On this tab you can submit your grades by uploading the HTML - file from the \"Results\" section
+        "On this tab you can submit your grades by uploading the HTML - file from the \"Resultater\" section
         on StudWeb"
     })
     
@@ -337,6 +356,7 @@ server <- function(input, output) {
     
     observeEvent(input$grades_file, {
         grades_df(html_to_df(input$grades_file$datapath))
+        original_grades_df(grades_df())
     })
     
     observeEvent(input$query, {
@@ -348,6 +368,13 @@ server <- function(input, output) {
         max=nrow(grades_df()),
         value=0
         )
+    })
+    
+    observeEvent(input$course_selection, {
+        validate(need(original_grades_df(), label = "Grades", message=FALSE))
+        grades_df(original_grades_df() %>%
+                      filter(course_name %in% input$course_selection)
+                             )
     })
 }
 
