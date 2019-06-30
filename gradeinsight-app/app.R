@@ -61,7 +61,9 @@ html_to_df <- function(filename){
         course_name = course_names,
         course_code = courses,
         numeric_grade = numeric_grades,
-        grade = grades %>% fct_reorder(numeric_grades),
+        grade = grades %>%
+            fct_expand(c("A", "B", "C", "D", "E", "F")) %>%
+            fct_relevel(sort),
         period = periods,
         credits = credits,
         period_list = period_codes
@@ -267,7 +269,16 @@ server <- function(input, output) {
             ggplot() +
             geom_bar(aes(x=grade, fill=grade)) +
             theme_classic() +
-            scale_fill_manual(values = colors)
+            scale_fill_manual(values = colors,
+                              drop=FALSE,
+                              limits=grades_df() %>%
+                                  pull(grade) %>% 
+                                  levels()
+            ) +
+            xlab("Grade") +
+            ylab("Count") +
+            labs(fill="Grades") +
+            xlim("F", "E", "D", "C", "B", "A")
         plots$dist_plot
     })
     
@@ -283,7 +294,15 @@ server <- function(input, output) {
             geom_hline(aes(yintercept = mean(percentile)), color="black") + 
             coord_flip() +
             theme_classic() +
-            scale_fill_manual(values = colors)
+            scale_fill_manual(values = colors,
+                              drop=FALSE,
+                              limits=grades_df() %>%
+                                  pull(grade) %>% 
+                                  levels()
+            ) +
+            ylab("Percentile") +
+            xlab("Course name") +
+            labs(fill="Grades")
         plots$perc_plot
     })
     
@@ -294,7 +313,16 @@ server <- function(input, output) {
             geom_bar() + 
             coord_flip() +
             theme_classic() +
-            scale_fill_manual(values = colors)
+            scale_fill_manual(values = colors,
+                              drop=FALSE,
+                              limits=grades_df() %>%
+                                  pull(grade) %>% 
+                                  levels()
+            ) +
+            xlab("Semester") +
+            ylab("Count") +
+            labs(fill="Grades")
+            
         plots$semester_performance
     })
     
