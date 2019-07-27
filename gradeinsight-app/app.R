@@ -195,7 +195,8 @@ ui <- fluidPage(theme = shinytheme("cerulean"),
                  dataTableOutput("extended_grades_plot")
                  ),
         tabPanel("Performance summary",
-                 downloadButton("csv", "Download CSV"),
+                 downloadButton("basic_csv", "Download basic CSV"),
+                 downloadButton("detailed_csv", "Download detailed CSV"),
                  downloadButton("pdf", "Download PDF"),
                  textOutput("text_summary", h4),
                  plotOutput("grade_distribution"),
@@ -227,12 +228,12 @@ server <- function(input, output) {
     plots <- reactiveValues()
     
     
-    csv_to_file <- function(file){
-        if (is.null(extended_grades_df())){
+    csv_to_file <- function(df, file){
+        if (is.null(df)){
             empty_tibble %>% write_csv(file)
         }
         else{
-        extended_grades_df() %>% write_csv(file)
+        df %>% write_csv(file)
         }
     }
     pdf_to_file <- function(file){
@@ -374,11 +375,16 @@ server <- function(input, output) {
         Please allow up to 30 seconds for the query to complete."
     })
     
-    output$csv <- downloadHandler(
-        "performance_table.csv",
-        csv_to_file,
+    output$detailed_csv <- downloadHandler(
+        "detailed.csv",
+        purrr::partial(csv_to_file, df=extended_grades_df()),
         "text/csv"
         )
+    output$basic_csv <- downloadHandler(
+        "basic.csv",
+        purrr::partial(csv_to_file, df=grades_df()),
+        "text/csv"
+    )
     output$pdf <- downloadHandler(
         "performance_visuals.pdf",
         pdf_to_file
